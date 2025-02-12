@@ -23,10 +23,11 @@ def recursive_copier(source_directory, static_site_directory):
             recursive_copier(full_path, static_path)
             
 def main():
-    source_directory = "/home/tjm/public/static"
-    static_site_directory = "/home/tjm/public/static_site"
+    source_directory = "/home/tjm/static-site-generator/static"
+    static_site_directory = "/home/tjm/static-site-generator/public"
 
     recursive_copier(source_directory, static_site_directory)
+
 
 
 main()
