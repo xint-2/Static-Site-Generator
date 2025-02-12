@@ -1,9 +1,9 @@
 import unittest
-
 from split_delimiter import (
-    split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_textnodes
+    split_nodes_delimiter, extract_markdown_images, extract_markdown_links, text_to_textnodes, markdown_to_blocks, block_to_block_type,
+    markdown_to_html_node
 )
-
+from htmlnode import HTMLNode
 from textnode import TextNode, TextType
 
 
@@ -138,6 +138,98 @@ class TestExtractionRegex(unittest.TestCase):
             ]
         self.assertEqual(result, expected_result)
 
+class TestMarkdownToBlock(unittest.TestCase):  
+    def test_markdown_to_block(self):
+        markdown = (
+        '# Heading\n\n'
+        'This is a paragraph.\n\n'
+        '* Bullet 1\n* Bullet 2\n* Bullet 3\n'
+        )
+        result = markdown_to_blocks(markdown)
+        expected_result = [
+        "# Heading",
+        "This is a paragraph.",
+        "* Bullet 1\n* Bullet 2\n* Bullet 3"
+        ]
+        self.assertEqual(result, expected_result)
+
+    def test_block_to_block_type(self):
+        # Testing valid types
+        heading_block = "# Heading"
+        paragraph_block = "This is a paragraph."
+        unordered_list_block = "* Bullet 1\n* Bullet 2\n* Bullet 3"
+        code_block = "``` Here is some code ```"
+        quote_block = "> Here is a quote"
+        ordered_list_block = "1. First Item\n2. Second Item\n3. Third Item"
+        self.assertEqual(block_to_block_type(heading_block), "heading")
+        self.assertEqual(block_to_block_type(paragraph_block), "paragraph")
+        self.assertEqual(block_to_block_type(unordered_list_block), "unordered_list")
+        self.assertEqual(block_to_block_type(code_block), "code")
+        self.assertEqual(block_to_block_type(quote_block), "quote")
+        self.assertEqual(block_to_block_type(ordered_list_block), "ordered_list")
+        # Testing multi-level headers
+        heading2_block = "## Heading level 2"
+        heading6_block = "###### Heading level 6"
+        self.assertEqual(block_to_block_type(heading2_block), "heading")
+        self.assertEqual(block_to_block_type(heading6_block), "heading")
+        # Test invalid headiing
+        invalid_heading = "#NoSpace"
+        self.assertEqual(block_to_block_type(invalid_heading), "paragraph")
+        # Multi-Line quote
+        multiline_quote = "> First\n> Second\n> Third"
+        self.assertEqual(block_to_block_type(multiline_quote), "quote")
+        # Multi-Line code
+        multiline_code = "```\ncode here\ncode there\n```"
+        self.assertEqual(block_to_block_type(multiline_code), "code")
+
+    def test_block_to_html(self):
+        # Test paragraph
+        node = markdown_to_html_node("This is a paragraph text.")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "p"
+
+        # Test unordered list
+        node = markdown_to_html_node("* Item 1\n* Item 2")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "ul"
+        assert len(node.children[0].children) == 2
+
+        # Test ordered list
+        node = markdown_to_html_node("1. Item one\n2. Item Two")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "ol"
+        assert len(node.children[0].children) == 2
+
+        # Test code
+        node = markdown_to_html_node("``` Some code here ```")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "pre"
+        assert node.children[0].children[0].tag == "code"
+
+        # Test heading
+        node = markdown_to_html_node("# Some Heading")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "h1"
+
+        # Test quote
+        node = markdown_to_html_node("> Quote Text One\n> Quote Text Two")
+        assert node.tag == "div"
+        assert len(node.children) == 1
+        assert node.children[0].tag == "blockquote"
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+
+
